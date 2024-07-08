@@ -20,11 +20,6 @@ if [ $(uname -m) = 'aarch64' ] ; then
     ARCH_SUFFIX="-aarch64"
 fi
 
-# Some defaults
-EDOMI_VERSION=EDOMI_203.tar
-EDOMI_EXTRACT_PATH=/tmp/edomi/
-EDOMI_ARCHIVE=/tmp/edomi.tar
-
 info "Installing required packages"
 # Install what we need ;-)
 dnf module enable -y \
@@ -85,7 +80,7 @@ rm -f /etc/vsftpd/ftpusers \
 info " -> Done"
 
 info "Installing LBS requirements"
-for currentInclude in ${ownLocation}/lbs-requirements ; do
+for currentInclude in ${ownLocation}/lbs-requirements/* ; do
     info " -> Loading/executing include ${currentInclude}"
     . ${currentInclude}
 done
