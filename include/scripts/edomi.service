@@ -1,0 +1,19 @@
+[Unit]
+Description=EDOMI
+Before=getty@tty1.service getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service
+After=httpd.service mysqld.service network.target
+Conflicts=getty@tty1.service getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service
+[Service]
+Restart=on-success
+SuccessExitStatus=SIGHUP
+Type=simple
+ExecStartPre=-sed -i -e "/ntpd/d" /usr/local/edomi/main/start.sh
+ExecStartPre=-sed -i -e "s@pkill -9 php.*@pkill -9 -x php@g" /usr/local/edomi/main/start.sh
+ExecStartPre=-touch /dev/vcsa
+ExecStart=/bin/sh /usr/local/edomi/main/start.sh
+ExecStop=/bin/sh /usr/local/bin/stop_edomi.sh
+TimeoutStartSec=0
+StandardOutput=inherit
+StandardError=inherit
+[Install]
+WantedBy=multi-user.target

@@ -129,10 +129,53 @@ echo "sql_mode=ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITU
 sed -i '/\[mysqld\]/r /tmp/tmp.txt' /etc/my.cnf.d/mariadb-server.cnf
 info " -> Done"
 
+info "Configuring FTP"
+rm -f /etc/vsftpd/ftpusers
+rm -f /etc/vsftpd/user_list
+sed -i -e '/listen=/ s/=.*/=YES/' /etc/vsftpd/vsftpd.conf
+sed -i -e '/listen_ipv6=/ s/=.*/=NO/' /etc/vsftpd/vsftpd.conf
+sed -i -e '/userlist_enable=/ s/=.*/=NO/' /etc/vsftpd/vsftpd.conf
+info " -> Done"
+
+info "Configuring Apache webserver"
+sed -i -e "s/#ServerName www\.example\.com/ServerName $SERVERIP/" /etc/httpd/conf/httpd.conf
+sed -i -e "s#DocumentRoot \"/var/www/html\"#DocumentRoot \"$MAIN_PATH/www\"#" /etc/httpd/conf/httpd.conf
+sed -i -e "s#<Directory \"/var/www\">#<Directory \"$MAIN_PATH/www\">#" /etc/httpd/conf/httpd.conf
+sed -i -e "s#<Directory \"/var/www/html\">#<Directory \"$MAIN_PATH/www\">#" /etc/httpd/conf/httpd.conf
+info " -> Done"
+
+info "Configuring MariaDB"
+systemctl start mariadb
+/usr/bin/mysqladmin -u root password ""
+mysql -e "DROP DATABASE test;"
+mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%'"
+mysql -e "FLUSH PRIVILEGES;"
+mysql -e "GRANT ALL ON *.* TO mysql@'%';"
+
+# MySQL symlink
+echo "Alias=mysqld.service" 			> /tmp/tmp.txt
+sed -i '/\[Install\]/r /tmp/tmp.txt' /usr/lib/systemd/system/mariadb.service
+ln -s '/usr/lib/systemd/system/mariadb.service' '/etc/systemd/system/mysqld.service'
+systemctl daemon-reload
+info " -> Done"
+
+info "Configuring PHP"
+sed -i -e '/short_open_tag =/ s/=.*/= On/' /etc/php.ini
+sed -i -e '/post_max_size =/ s/=.*/= 100M/' /etc/php.ini
+sed -i -e '/upload_max_filesize =/ s/=.*/= 100M/' /etc/php.ini
+sed -i -e '/max_file_uploads =/ s/=.*/= 1000/' /etc/php.ini
+info " -> Done"
+
 info "Installing Edomi"
+systemctl stop mariadb
+cp -rf ${ownLocation}/../main /usr/local/edomi/
+cp -rf ${ownLocation}/../www /usr/local/edomi/
+cp -f ${ownLocation}/../edomi.ini /usr/local/edomi/
+cp -f ${ownLocation}/../LICENSE /usr/local/edomi/
+cp -f ${ownLocation}/../logicmonitor.ini /usr/local/edomi/
 
-info "TBD..."
-
+cp ${ownLocation}/scripts/edomi.service /etc/systemd/system/
+systemctl enable edomi.service
 info " -> Done"
 
 info "Installing MySQL UDF log/sys"
