@@ -15,6 +15,10 @@ cd ${ownLocation}
 . ./helpers_console.sh
 _init
 
+# Define some defaults
+SERVERIP="$(hostname -I | cut -d' ' -f1)"
+MAIN_PATH="/usr/local/edomi"
+
 # Determine architecture
 if [ $(uname -m) = 'aarch64' ]; then
     ARCH_SUFFIX="-aarch64"
